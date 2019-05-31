@@ -24,6 +24,7 @@ import frc.robot.commands.TriggerDrive;
 
 import frc.robot.subsystems.DriveTrain;
 import frc.robot.subsystems.Ledring;
+import frc.robot.subsystems.Slider;
 import frc.robot.subsystems.Superstructure;
 
 // Robot design ideas:
@@ -52,6 +53,7 @@ public class Robot extends TimedRobot {
 	public static DriveTrain mDriveTrain;
 	public static OI mOI;
 	public static Ledring mLedring;
+	public static Slider mSlider;
 
 	/* Commands */
 	public TriggerDrive mTriggerDrive;
@@ -83,7 +85,8 @@ public class Robot extends TimedRobot {
 		logger.log("Constructing Subsystems", Level.kRobot);
 		mOI = OI.getInstance();
 		mDriveTrain = DriveTrain.getInstance();
-		mLedring = new Ledring();
+		mLedring = Ledring.getInstance();
+		mSlider = Slider.getInstance();
 
 		/* Initalize Subsystems if required */
 		logger.log("Initializing Subsystems", Level.kRobot);

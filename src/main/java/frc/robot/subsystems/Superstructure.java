@@ -2,38 +2,39 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
 import frc.common.utils.RobotLogger;
+import frc.robot.Constants;
 
 /**
- * Any information about the robot's current status should be accessed through the superstructure.
- * This class can be thought of as an interface for getting high-level data about the robot 
- * as well as high-level methods for controlling components of the robot that interact with 
- * eachother. 
+ * Any information about the robot's current status should be accessed through
+ * the superstructure. This class can be thought of as an interface for getting
+ * high-level data about the robot as well as high-level methods for controlling
+ * components of the robot that interact with eachother.
  * 
- * ex. An elevator and arm could be both controlled with a setIntakeKinematicPosition(x,y);
- * this function would then follow the correct set of states to get the job done. To move the elevator,
- * it might call a setSetpoint(), then a feed() untill the error is within the threshold. This could be checked with a 
- * isAtThreshold()
+ * ex. An elevator and arm could be both controlled with a
+ * setIntakeKinematicPosition(x,y); this function would then follow the correct
+ * set of states to get the job done. To move the elevator, it might call a
+ * setSetpoint(), then a feed() untill the error is within the threshold. This
+ * could be checked with a isAtThreshold()
  * 
- * This file is in the subsystem packge so that it can access protected information from each subsystem.
+ * This file is in the subsystem packge so that it can access protected
+ * information from each subsystem.
  * 
  * This is a state machine
  */
 public class Superstructure {
     // State that the user wants
     public enum WantedState {
-        kIdle
+        kIdle, kIntake, kOuttake, kClimb
     }
-    
+
     // Internal state of robot
     public enum SystemState {
-        kIdle
+        kIdle, kLowerFinger, kRaiseFinger, kAcceptSliderInput, kEnableLedring, kDisableLedring
     }
 
     // Wanted method of controlling the drivetrain
     public enum WantedDriveMethod {
-        kDefault,
-        kArcade,
-        kCurvature
+        kDefault, kArcade, kCurvature
     }
 
     // Static var for holding the current instance
@@ -53,7 +54,15 @@ public class Superstructure {
     // All subsystems involved in, or accessed by the superstructure
     private DriveTrain mDriveTrain = DriveTrain.getInstance();
     private Ledring mLedring = Ledring.getInstance();
-    
+    private Slider mSlider = Slider.getInstance();
+
+    // Buffered data
+    private double buffered_slider_speed = 0.0;
+    private Slider.WantedState buffered_slider_wanted_state;
+
+    // Ticker to be shared by all states
+    private int ticker = 0;
+
     public static Superstructure getInstance() {
         if (instance == null) {
             instance = new Superstructure();
@@ -65,10 +74,10 @@ public class Superstructure {
     /**
      * This is run periodically while the robot is running
      * 
-     * This is not to be confused with the conventional subsystem interface.
-     * For simple tasks, the usual interface must be used. But for any task that 
-     * can be controlled by more than one command, or requires multiple subsystems 
-     * to work together, that code should be spun off here.
+     * This is not to be confused with the conventional subsystem interface. For
+     * simple tasks, the usual interface must be used. But for any task that can be
+     * controlled by more than one command, or requires multiple subsystems to work
+     * together, that code should be spun off here.
      */
     public void periodic(double timestamp) {
         synchronized (this) {
@@ -76,8 +85,14 @@ public class Superstructure {
 
             // Run the correct handler for new state
             switch (newState) {
+
+            // Superstructure idle
             case kIdle:
                 newState = handleIdle(mStateChanged);
+
+                // Lowering finger to accept a hatch
+            case kLowerFinger:
+                newState = handleLowerFinger(mStateChanged);
             }
 
             // Deal with a state change
@@ -89,9 +104,13 @@ public class Superstructure {
             } else {
                 mStateChanged = false;
             }
+
+            // Increment the ticker
+            ticker += 1;
+
         }
     }
-    
+
     /* States */
 
     /**
@@ -105,21 +124,58 @@ public class Superstructure {
             // Disable the Ledring, but only on the first time this is called.
             // This way, some other part of the code can override the Ledring state
             mLedring.setWantedState(Ledring.WantedState.kOff);
+
+            // Recentre the slider
+            mSlider.setWantedState(Slider.WantedState.kCentre);
         }
-        
-        /** 
-         * If the user has requested a new state for the robot, 
-         * set the next SystemState required to get the job done.
+
+        /**
+         * If the user has requested a new state for the robot, set the next SystemState
+         * required to get the job done.
          * 
          * The default state is nothing
          */
         switch (mWantedState) {
+
+        // Intake
+        case kIntake:
+            return SystemState.kLowerFinger;
+
+        // Anything else
         default:
             return SystemState.kIdle;
         }
-    
+
     }
-    
+
+    private SystemState handleLowerFinger(boolean stateChanged) {
+        // Do required work for this state
+        if (stateChanged) {
+            // Release the solenoid
+
+        }
+
+        // Null loop until ticker hits desired height
+        if (!(ticker == Constants.TickerTiming.finger_movement_time)) {
+            return SystemState.kLowerFinger;
+        }
+
+        // Reset the ticker
+        ticker = 0;
+
+        // Move to the next required state for the user input
+        switch (mWantedState) {
+
+        // Wants to intake
+        case kIntake:
+            return SystemState.kEnableLedring;
+
+        // Wants to do something else. Reset finger first
+        default:
+            return SystemState.kRaiseFinger;
+        }
+    }
+
     /* Getters */
 
     /**
@@ -151,6 +207,23 @@ public class Superstructure {
         }
     }
 
+    /**
+     * Set the buffered speed for the slider. This can be called at any time, but
+     * will only actually control the slider when input is needed.
+     */
+    public void slide(double speed) {
+        this.buffered_slider_speed = speed;
+    }
 
+    /**
+     * Set the buffered WantedState for the slider. This can be called at any time,
+     * but will only actually control the slider when input is needed.
+     * 
+     * Passing a kManual state will allow the input of slide(double) to control the
+     * slider
+     */
+    public void slider(Slider.WantedState state) {
+        this.buffered_slider_wanted_state = state;
+    }
 
 }
