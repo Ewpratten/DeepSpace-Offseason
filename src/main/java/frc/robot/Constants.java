@@ -76,6 +76,7 @@ public class Constants {
 		public static final int can_id = 11;
 		public static final int ledring = 0;
 		public static final int finger = 1;
+		public static final int piston = 7;
 	}
 
 	public class DIO {

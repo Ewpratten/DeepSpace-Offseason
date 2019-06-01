@@ -111,7 +111,7 @@ public class OI {
   }
 
   public boolean intake() {
-    return this.operatorController.getYButton();
+    return this.operatorController.getYButtonPressed();
   }
 
   public boolean outtake() {

@@ -15,7 +15,7 @@ public class ControlExtras extends Command {
     Superstructure superstructure;
     OI oi;
 
-    boolean idle_lock = false;
+    boolean idle_lock, intake_mode = false;
 
     public ControlExtras() {
         // Not sure if this is needed when using the superstructure
@@ -57,19 +57,28 @@ public class ControlExtras extends Command {
         // Get outtake button
         boolean outtake = oi.outtake();
 
-        // Set appropriate want for superstructure
+        // Toggle intake mode each time button is pressed
         if (intake) {
-            superstructure.setWantedState(Superstructure.WantedState.kIntake);
+            intake_mode = !intake_mode;
             idle_lock = false;
+        }
 
-        } else if (!intake && !outtake && !idle_lock) {
-            superstructure.setWantedState(Superstructure.WantedState.kIdle);
+        // Set appropriate want for superstructure
+        // This lock ensures that this can only be called once, and not override other
+        // requests
+        if (!idle_lock) {
+            if (intake_mode) {
+                superstructure.setWantedState(Superstructure.WantedState.kIntake);
+                idle_lock = true;
 
-            // This lock ensures that this can only be called once, and not override other
-            // requests
-            idle_lock = true;
+            } else if (!intake && !outtake) {
+                superstructure.setWantedState(Superstructure.WantedState.kIdle);
+                idle_lock = true;
 
-        } else if (outtake) {
+            }
+        }
+        
+        if (outtake) {
             superstructure.setWantedState(Superstructure.WantedState.kOuttake);
         }
 

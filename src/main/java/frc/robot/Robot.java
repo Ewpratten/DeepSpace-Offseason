@@ -25,6 +25,7 @@ import frc.robot.commands.TriggerDrive;
 import frc.robot.subsystems.DriveTrain;
 import frc.robot.subsystems.Finger;
 import frc.robot.subsystems.Ledring;
+import frc.robot.subsystems.Piston;
 import frc.robot.subsystems.Slider;
 import frc.robot.subsystems.Superstructure;
 
@@ -56,6 +57,7 @@ public class Robot extends TimedRobot {
 	public static Ledring mLedring;
 	public static Slider mSlider;
 	public static Finger mFinger;
+	public static Piston mPiston;
 
 	/* Commands */
 	public TriggerDrive mTriggerDrive;
@@ -90,6 +92,7 @@ public class Robot extends TimedRobot {
 		mLedring = Ledring.getInstance();
 		mSlider = Slider.getInstance();
 		mFinger = Finger.getInstance();
+		mPiston = Piston.getInstance();
 
 		/* Initalize Subsystems if required */
 		logger.log("Initializing Subsystems", Level.kRobot);

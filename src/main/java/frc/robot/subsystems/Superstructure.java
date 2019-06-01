@@ -29,7 +29,8 @@ public class Superstructure {
 
     // Internal state of robot
     public enum SystemState {
-        kIdle, kLowerFinger, kRaiseFinger, kAcceptSliderInput, kEnableLedring, kDisableLedring
+        kIdle, kLowerFinger, kRaiseFinger, kAcceptSliderInput, kEnableLedring, kDisableLedring, kExtendPiston,
+        kRetractPison
     }
 
     // Wanted method of controlling the drivetrain
@@ -56,6 +57,7 @@ public class Superstructure {
     private Ledring mLedring = Ledring.getInstance();
     private Slider mSlider = Slider.getInstance();
     private Finger mFinger = Finger.getInstance();
+    private Piston mPiston = Piston.getInstance();
 
     // Buffered data
     private double buffered_slider_speed = 0.0;
@@ -110,6 +112,12 @@ public class Superstructure {
                 // Accept input from user
             case kAcceptSliderInput:
                 newState = handleSliderInput(mStateChanged);
+
+            case kExtendPiston:
+                newState = handlePistonExtend(mStateChanged);
+
+            case kRetractPison:
+                newState = handlePistonRetract(mStateChanged);
             }
 
             // Deal with a state change
@@ -164,6 +172,10 @@ public class Superstructure {
         case kIntake:
             return SystemState.kLowerFinger;
 
+        // Outtake
+        case kOuttake:
+            return SystemState.kLowerFinger;
+
         // Anything else
         default:
             return SystemState.kIdle;
@@ -197,6 +209,9 @@ public class Superstructure {
         case kIntake:
             return SystemState.kEnableLedring;
 
+        case kOuttake:
+            return SystemState.kExtendPiston;
+
         // Wants to do something else. Reset finger first
         default:
             return SystemState.kRaiseFinger;
@@ -215,6 +230,9 @@ public class Superstructure {
 
         // Ideling after an intake
         case kIdle:
+            return SystemState.kIdle;
+
+        case kOuttake:
             return SystemState.kIdle;
 
         // Nothing else needs to be reset. Become idle
@@ -269,7 +287,6 @@ public class Superstructure {
         // Push buffers to slider subsystem
         mSlider.setWantedState(buffered_slider_wanted_state);
         mSlider.setManualSpeed(buffered_slider_speed);
-        
 
         // Move to the next required state for the user input
         switch (mWantedState) {
@@ -277,7 +294,7 @@ public class Superstructure {
         // Ideling after an intake
         case kIdle:
             return SystemState.kDisableLedring;
-        
+
         // Continue to intake if want does not change
         case kIntake:
             return SystemState.kAcceptSliderInput;
@@ -285,6 +302,52 @@ public class Superstructure {
         // Nothing else needs to be reset. Become idle
         default:
             return SystemState.kIdle;
+        }
+    }
+
+    private SystemState handlePistonExtend(boolean stateChanged) {
+        // Do required work for this state
+        if (stateChanged) {
+            // Release the solenoid
+            mPiston.setWantedState(Piston.WantedState.kExtended);
+        }
+
+        // Null loop until ticker hits desired height
+        if (!(ticker == Constants.TickerTiming.finger_movement_time)) {
+            return SystemState.kExtendPiston;
+        }
+
+        // Reset the ticker
+        ticker = 0;
+
+        // Move to the next required state for the user input
+        switch (mWantedState) {
+
+        case kOuttake:
+            return SystemState.kRetractPison;
+
+        // Wants to do something else. Reset finger first
+        default:
+            return SystemState.kRaiseFinger;
+        }
+    }
+
+    private SystemState handlePistonRetract(boolean stateChanged) {
+        // Do required work for this state
+        if (stateChanged) {
+            // Release the solenoid
+            mPiston.setWantedState(Piston.WantedState.kRetracted);
+        }
+
+        // Move to the next required state for the user input
+        switch (mWantedState) {
+
+        case kOuttake:
+            return SystemState.kRaiseFinger;
+
+        // Wants to do something else. Reset finger first
+        default:
+            return SystemState.kRaiseFinger;
         }
     }
 

@@ -10,29 +10,29 @@ import edu.wpi.first.wpilibj.Solenoid;
 import frc.robot.Constants;
 
 /**
- * The Subsystem in control of the robot's finger
+ * The Subsystem in control of the robot's Pison
  * 
- * Usage: To control the Finger, a state must be requested via setWantedState();
+ * Usage: To control the Pison, a state must be requested via setWantedState();
  * this will be completed via the update() function that is called in the
  * robot's periodic loop
  */
-public class Finger extends Subsystem {
+public class Piston extends Subsystem {
     public enum WantedState {
-        kLowered, kRaised
+        kExtended, kRetracted
     }
 
-    private static Finger instance = null;
+    private static Piston instance = null;
     private final RobotLogger logger = RobotLogger.getInstance();
 
     private WantedState mWantedState;
 
-    private Solenoid finger;
+    private Solenoid pison;
 
-    protected boolean isLowered = false;
+    protected boolean isExtended = false;
 
-    public Finger() {
-        logger.log("[Finger] Constructing solenoid", Level.kRobot);
-        this.finger = new Solenoid(Constants.PCM.finger);
+    public Piston() {
+        logger.log("[Piston] Constructing solenoid", Level.kRobot);
+        this.pison = new Solenoid(Constants.PCM.piston);
     }
 
     @Override
@@ -43,9 +43,9 @@ public class Finger extends Subsystem {
         // setDefaultCommand(new TriggerDrive());
     }
 
-    public static Finger getInstance() {
+    public static Piston getInstance() {
         if (instance == null) {
-            instance = new Finger();
+            instance = new Piston();
         }
 
         return instance;
@@ -53,7 +53,7 @@ public class Finger extends Subsystem {
 
     public void setWantedState(WantedState state) {
         mWantedState = state;
-        logger.log("[Finger] Wanted state set to: " + state);
+        logger.log("[Piston] Wanted state set to: " + state);
     }
 
     /**
@@ -63,13 +63,13 @@ public class Finger extends Subsystem {
      */
     public void update() {
         switch (mWantedState) {
-        case kLowered:
-            finger.set(false);
-            isLowered = true;
+        case kExtended:
+            pison.set(true);
+            isExtended = true;
             break;
         default:
-            finger.set(true);
-            isLowered = false;
+            pison.set(false);
+            isExtended = false;
             break;
         }
     }
@@ -78,10 +78,10 @@ public class Finger extends Subsystem {
      * Sends Subsystem telemetry data to SmartDashboard
      */
     public void outputTelemetry() {
-        SmartDashboard.putBoolean("Finger lowered", isLowered);
+        SmartDashboard.putBoolean("Piston extended", isExtended);
     }
 
     public void reset() {
-        finger.set(true);
+        pison.set(false);
     }
 }
