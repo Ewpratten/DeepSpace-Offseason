@@ -75,6 +75,7 @@ public class Constants {
 	public class PCM {
 		public static final int can_id = 11;
 		public static final int ledring = 0;
+		public static final int finger = 1;
 	}
 
 	public class DIO {

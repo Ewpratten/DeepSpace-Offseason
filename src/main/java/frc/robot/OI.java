@@ -49,6 +49,7 @@ public class OI {
 
   // Constrollers
   public XboxController driverController = new XboxController(0);
+  public XboxController operatorController = new XboxController(1);
 
   /**
    * Get the current OI instance
@@ -103,5 +104,21 @@ public class OI {
    */
   public double getPivot() {
     return this.driverController.getX(GenericHID.Hand.kRight);
+  }
+
+  public double getManualSliderSpeed() {
+    return this.operatorController.getX(GenericHID.Hand.kLeft);
+  }
+
+  public boolean intake() {
+    return this.operatorController.getYButton();
+  }
+
+  public boolean outtake() {
+    return this.operatorController.getBButton();
+  }
+
+  public int getSliderPosition() {
+    return this.operatorController.getPOV();
   }
 }

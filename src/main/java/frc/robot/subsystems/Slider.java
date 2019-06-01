@@ -95,7 +95,7 @@ public class Slider extends Subsystem {
      * 
      * @param timestamp
      */
-    public void periodic(double timestamp) {
+    public void update(double timestamp) {
         // Set an output speed to be modified
         double output = 0.0;
 

@@ -55,6 +55,7 @@ public class Superstructure {
     private DriveTrain mDriveTrain = DriveTrain.getInstance();
     private Ledring mLedring = Ledring.getInstance();
     private Slider mSlider = Slider.getInstance();
+    private Finger mFinger = Finger.getInstance();
 
     // Buffered data
     private double buffered_slider_speed = 0.0;
@@ -93,6 +94,22 @@ public class Superstructure {
                 // Lowering finger to accept a hatch
             case kLowerFinger:
                 newState = handleLowerFinger(mStateChanged);
+
+                // Raising finger once a hatch is grabbed
+            case kRaiseFinger:
+                newState = handleRaiseFinger(mStateChanged);
+
+                // Enable light
+            case kEnableLedring:
+                newState = handleEnableLedring(mStateChanged);
+
+                // Disable light
+            case kDisableLedring:
+                newState = handleDisableLedring(mStateChanged);
+
+                // Accept input from user
+            case kAcceptSliderInput:
+                newState = handleSliderInput(mStateChanged);
             }
 
             // Deal with a state change
@@ -127,6 +144,12 @@ public class Superstructure {
 
             // Recentre the slider
             mSlider.setWantedState(Slider.WantedState.kCentre);
+
+            // Stow / raise the finger
+            mFinger.setWantedState(Finger.WantedState.kRaised);
+
+            // Reset the WantedState
+            mWantedState = WantedState.kIdle;
         }
 
         /**
@@ -148,11 +171,15 @@ public class Superstructure {
 
     }
 
+    /**
+     * State handler for lowering the finger and pausing the appropriate amount of
+     * time
+     */
     private SystemState handleLowerFinger(boolean stateChanged) {
         // Do required work for this state
         if (stateChanged) {
             // Release the solenoid
-
+            mFinger.setWantedState(Finger.WantedState.kLowered);
         }
 
         // Null loop until ticker hits desired height
@@ -173,6 +200,91 @@ public class Superstructure {
         // Wants to do something else. Reset finger first
         default:
             return SystemState.kRaiseFinger;
+        }
+    }
+
+    private SystemState handleRaiseFinger(boolean stateChanged) {
+        // Do required work for this state
+        if (stateChanged) {
+            // Release the solenoid
+            mFinger.setWantedState(Finger.WantedState.kRaised);
+        }
+
+        // Move to the next required state for the user input
+        switch (mWantedState) {
+
+        // Ideling after an intake
+        case kIdle:
+            return SystemState.kIdle;
+
+        // Nothing else needs to be reset. Become idle
+        default:
+            return SystemState.kIdle;
+        }
+    }
+
+    private SystemState handleEnableLedring(boolean stateChanged) {
+        // Do required work for this state
+        if (stateChanged) {
+            // Release the solenoid
+            mLedring.setWantedState(Ledring.WantedState.kSolid);
+        }
+
+        // Move to the next required state for the user input
+        switch (mWantedState) {
+
+        // Allow the user to control the slider
+        case kIntake:
+            return SystemState.kAcceptSliderInput;
+
+        // Nothing else needs to be reset. Become idle
+        default:
+            return SystemState.kIdle;
+        }
+    }
+
+    private SystemState handleDisableLedring(boolean stateChanged) {
+        // Do required work for this state
+        if (stateChanged) {
+            // Release the solenoid
+            mLedring.setWantedState(Ledring.WantedState.kOff);
+        }
+
+        // Move to the next required state for the user input
+        switch (mWantedState) {
+
+        // Ideling after an intake
+        case kIdle:
+            return SystemState.kRaiseFinger;
+
+        // Nothing else needs to be reset. Become idle
+        default:
+            return SystemState.kIdle;
+        }
+    }
+
+    private SystemState handleSliderInput(boolean stateChanged) {
+        // Do required work for this state
+
+        // Push buffers to slider subsystem
+        mSlider.setWantedState(buffered_slider_wanted_state);
+        mSlider.setManualSpeed(buffered_slider_speed);
+        
+
+        // Move to the next required state for the user input
+        switch (mWantedState) {
+
+        // Ideling after an intake
+        case kIdle:
+            return SystemState.kDisableLedring;
+        
+        // Continue to intake if want does not change
+        case kIntake:
+            return SystemState.kAcceptSliderInput;
+
+        // Nothing else needs to be reset. Become idle
+        default:
+            return SystemState.kIdle;
         }
     }
 
@@ -222,8 +334,11 @@ public class Superstructure {
      * Passing a kManual state will allow the input of slide(double) to control the
      * slider
      */
-    public void slider(Slider.WantedState state) {
+    public void slide(Slider.WantedState state) {
         this.buffered_slider_wanted_state = state;
     }
 
+    public void setWantedState(WantedState state) {
+        mWantedState = state;
+    }
 }

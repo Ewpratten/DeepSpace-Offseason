@@ -23,6 +23,7 @@ import frc.common.network.ConnectionMonitor;
 import frc.robot.commands.TriggerDrive;
 
 import frc.robot.subsystems.DriveTrain;
+import frc.robot.subsystems.Finger;
 import frc.robot.subsystems.Ledring;
 import frc.robot.subsystems.Slider;
 import frc.robot.subsystems.Superstructure;
@@ -54,6 +55,7 @@ public class Robot extends TimedRobot {
 	public static OI mOI;
 	public static Ledring mLedring;
 	public static Slider mSlider;
+	public static Finger mFinger;
 
 	/* Commands */
 	public TriggerDrive mTriggerDrive;
@@ -87,6 +89,7 @@ public class Robot extends TimedRobot {
 		mDriveTrain = DriveTrain.getInstance();
 		mLedring = Ledring.getInstance();
 		mSlider = Slider.getInstance();
+		mFinger = Finger.getInstance();
 
 		/* Initalize Subsystems if required */
 		logger.log("Initializing Subsystems", Level.kRobot);
@@ -131,8 +134,10 @@ public class Robot extends TimedRobot {
 		updateTimestamp();
 		mSuperstructure.periodic(this.last_timestamp);
 
-		// Update the Ledring
+		// Call updaters for each function
 		mLedring.update();
+		mSlider.update(this.last_timestamp);
+		mFinger.update();
 
 	}
 
@@ -170,6 +175,9 @@ public class Robot extends TimedRobot {
 
 		// Start recording video on driverstation computer
 		Shuffleboard.startRecording();
+
+		// Set the slider to centre
+		mSlider.setWantedState(Slider.WantedState.kCentre);
 	}
 
 	@Override
@@ -196,6 +204,8 @@ public class Robot extends TimedRobot {
 		/* Start commands */
 		this.mTriggerDrive.start();
 
+		// Set slider to centre
+		mSlider.setWantedState(Slider.WantedState.kCentre);
 	}
 
 	@Override
